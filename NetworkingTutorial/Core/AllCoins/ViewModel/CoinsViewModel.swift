@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class CoinsViewModel: ObservableObject {
     
     @Published var coins = [Coin]()
@@ -15,20 +16,14 @@ class CoinsViewModel: ObservableObject {
     private let service = CoinDataService()
     
     init() {
-        //fetchPrice(coin: "bitcoin")
-        fetchCoins()
+        Task { try await fetchCoins() }
     }
     
-    func fetchCoins() {
-//        service.fetchCoins { coins, error in
-//            DispatchQueue.main.async {
-//                if let error = error {
-//                    self.errorMessage = error.localizedDescription
-//                }
-//                self.coins = coins ?? []
-//            }
-//        }
-        
+    func fetchCoins() async throws {
+        self.coins = try await service.fetchCoins()
+    }
+    
+    func fetchCoinsWithCompletionHandler() {
         service.fetchCoinsWithResult { [weak self] result in
             DispatchQueue.main.async {
                 switch result {

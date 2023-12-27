@@ -11,7 +11,25 @@ class CoinDataService { // background thread, no need for DispatchQueue.main { c
     
     private let urlString = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h&locale=en"
     
+    func fetchCoins() async throws -> [Coin] {
+        guard let url = URL(string: urlString) else { return [] }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let coins = try JSONDecoder().decode([Coin].self, from: data)
+            return coins
+        } catch {
+            return []
+        }
+        
+        
+    }
     
+}
+
+// MARK: - Completion Handlers
+
+extension CoinDataService {
     func fetchCoinsWithResult(completion: @escaping(Result<[Coin], CoinAPIError>) -> Void) {
         guard let url = URL(string: urlString) else { return }
         
@@ -44,37 +62,11 @@ class CoinDataService { // background thread, no need for DispatchQueue.main { c
                 completion(.failure(.jsonParsingFailure))
             }
             
-            //guard let coins = try? JSONDecoder().decode([Coin].self, from: data) else { return } // decoding as a specified object, data comes back as array
-            
-//            for coin in coins {
-//                print("DEBUG: coin id \(coin.id)")
-//            }
-            
             
         }.resume()
     }
     
-                // giving viewModel array of coins
-    func fetchCoins(completion: @escaping([Coin]?, Error?) -> Void) {
-        guard let url = URL(string: urlString) else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                completion(nil, error)
-                return
-            }
-            
-            guard let data = data else { return }
-            
-            guard let coins = try? JSONDecoder().decode([Coin].self, from: data) else { return } // decoding as a specified object, data comes back as array
-            
-//            for coin in coins {
-//                print("DEBUG: coin id \(coin.id)")
-//            }
-            completion(coins, nil)
-            
-        }.resume()
-    }
+
     
     func fetchPrice(coin: String, completion: @escaping(Double) -> Void) {
         let urlString = "https://api.coingecko.com/api/v3/simple/price?ids=\(coin)&vs_currencies=usd"
